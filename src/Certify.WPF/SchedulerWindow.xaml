@@ -1,0 +1,65 @@
+<Window x:Class="Certify.WPF.SchedulerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Certify.WPF"
+        Title="{DynamicResource Win_Sched_Title}" Height="450" Width="760" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{StaticResource BgBrush}" FontFamily="{StaticResource MainFont}"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Auto"
+        TextOptions.TextHintingMode="Fixed"
+        RenderOptions.ClearTypeHint="Enabled"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource CardGradient}" CornerRadius="12" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="16" SnapsToDevicePixels="True" Margin="0,0,0,14">
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Sched_Kicker}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="Bold"/>
+                <TextBlock Text="{DynamicResource Sched_Intro}" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" Margin="0,4,0,0" TextWrapping="Wrap"/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="1" Background="{StaticResource CardGradient}" CornerRadius="12" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="16" SnapsToDevicePixels="True">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" MinWidth="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <TextBlock Text="{DynamicResource Svc_Row_Status}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,16,10"/>
+                <TextBlock x:Name="StatusValue" Grid.Column="1" Text="-" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="1" Text="{DynamicResource Svc_Row_Name}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,16,10"/>
+                <TextBlock x:Name="NameValue" Grid.Row="1" Grid.Column="1" Text="-" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontFamily="{StaticResource MonoFont}" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="2" Text="{DynamicResource Sched_Row_Time}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,16,10"/>
+                <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,10">
+                    <local:NumericUpDown x:Name="HourBox" local:Help.Topic="SchedTime" Width="72" Minimum="0" Maximum="23" Value="3"/>
+                    <TextBlock Text=":" Foreground="{StaticResource TextPrimaryBrush}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" Margin="6,0"/>
+                    <local:NumericUpDown x:Name="MinuteBox" local:Help.Topic="SchedTime" Width="72" Minimum="0" Maximum="59" Step="5" Value="0"/>
+                    <TextBlock Text="{DynamicResource Sched_Daily}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                </StackPanel>
+                <TextBlock Grid.Row="3" Text="{DynamicResource Sched_Row_LastRun}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,16,10"/>
+                <TextBlock x:Name="LastRunValue" Grid.Row="3" Grid.Column="1" Text="-" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="4" Text="{DynamicResource Sched_Row_NextRun}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,16,10"/>
+                <TextBlock x:Name="NextRunValue" Grid.Row="4" Grid.Column="1" Text="-" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" Margin="0,0,0,10"/>
+                <TextBlock Grid.Row="5" Text="{DynamicResource Sched_Row_Command}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" Margin="0,0,16,0"/>
+                <TextBlock x:Name="CommandValue" Grid.Row="5" Grid.Column="1" Text="-" Foreground="{StaticResource TextPrimaryBrush}" FontSize="12" FontFamily="{StaticResource MonoFont}" TextWrapping="Wrap" TextTrimming="None"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Background="#0A1120" CornerRadius="12" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="14" Margin="0,14,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <WrapPanel Orientation="Horizontal">
+                    <Button local:ButtonIcon.Kind="Add" x:Name="CreateButton" local:Help.Topic="SchedCreate" Content="{DynamicResource Sched_Btn_Create}" Padding="12,6" Margin="0,0,6,0" Click="Create_Click" Style="{StaticResource PrimaryButton}"/>
+                    <Button local:ButtonIcon.Kind="Update" x:Name="UpdateButton" Content="{DynamicResource Svc_Btn_Update}" Padding="12,6" Margin="0,0,6,0" Click="Update_Click" ToolTip="{DynamicResource Sched_Tip_Update}"/>
+                    <Button local:ButtonIcon.Kind="Start" x:Name="RunButton" local:Help.Topic="SchedRun" Content="{DynamicResource Sched_Btn_RunNow}" Padding="12,6" Margin="0,0,6,0" Click="Run_Click"/>
+                    <Button local:ButtonIcon.Kind="Pause" x:Name="EnableButton" local:Help.Topic="SchedToggle" Content="{DynamicResource Sched_Btn_Disable}" Padding="12,6" Margin="0,0,6,0" Click="Toggle_Click"/>
+                    <Button local:ButtonIcon.Kind="Delete" x:Name="DeleteButton" local:Help.Topic="SchedDelete" Content="{DynamicResource Btn_Delete}" Padding="12,6" Click="Delete_Click"/>
+                </WrapPanel>
+                <Button local:ButtonIcon.Kind="Close" Grid.Column="1" Content="{DynamicResource Btn_Close}" MinWidth="90" Click="Close_Click" IsCancel="True" VerticalAlignment="Top"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -1,6 +1,7 @@
 <Window x:Class="Certify.WPF.CalendarWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Certify.WPF"
         Title="{DynamicResource Win_Cal_Title}" Height="640" Width="860" WindowStartupLocation="CenterOwner"
         Background="{StaticResource BgBrush}" FontFamily="{StaticResource MainFont}"
         TextOptions.TextFormattingMode="Display"
@@ -21,9 +22,9 @@
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="&lt;" Width="40" Click="Prev_Click" Margin="0,0,8,0"/>
-                    <Button Content="{DynamicResource Cal_Today}" MinWidth="70" Click="Today_Click"/>
-                    <Button Content="&gt;" Width="40" Margin="8,0,0,0" Click="Next_Click"/>
+                    <Button local:ButtonIcon.Kind="Prev" Content="" Width="40" Click="Prev_Click" Margin="0,0,8,0"/>
+                    <Button local:ButtonIcon.Kind="Today" Content="{DynamicResource Cal_Today}" MinWidth="70" Click="Today_Click"/>
+                    <Button local:ButtonIcon.Kind="Next" Content="" Width="40" Margin="8,0,0,0" Click="Next_Click"/>
                 </StackPanel>
                 <TextBlock x:Name="MonthTitle" Grid.Column="1" Text="" Foreground="{StaticResource TextPrimaryBrush}" FontSize="16" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
@@ -63,7 +64,7 @@
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <TextBlock x:Name="CalendarFooter" Text="" Foreground="{StaticResource TextMutedBrush}" FontSize="12" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="{DynamicResource Btn_Close}" MinWidth="120" Click="Close_Click" IsCancel="True" IsDefault="True" Style="{StaticResource PrimaryButton}"/>
+                <Button local:ButtonIcon.Kind="Close" Grid.Column="1" Content="{DynamicResource Btn_Close}" MinWidth="120" Click="Close_Click" IsCancel="True" IsDefault="True" Style="{StaticResource PrimaryButton}"/>
             </Grid>
         </Border>
     </Grid>

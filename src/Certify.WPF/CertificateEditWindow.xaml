@@ -1,7 +1,8 @@
 <Window x:Class="Certify.WPF.CertificateEditWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="{DynamicResource Win_Edit_Title}" Height="700" Width="760" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        xmlns:local="clr-namespace:Certify.WPF"
+        Title="{DynamicResource Win_Edit_Title}" Height="700" Width="760" WindowStartupLocation="CenterOwner" ResizeMode="CanResize" MinHeight="500" MinWidth="640"
         Background="{StaticResource BgBrush}" FontFamily="{StaticResource MainFont}"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="Auto"
@@ -40,16 +41,16 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                             <TextBlock Text="{DynamicResource Edit_Name}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="0" Margin="0,0,0,10"/>
-                            <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,10" />
+                            <TextBox x:Name="NameBox" local:Help.Topic="Name" Grid.Row="0" Grid.Column="1" Margin="0,0,0,10" />
 
                             <TextBlock Text="Email ACME" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="1" Margin="0,0,0,10"/>
-                            <TextBox x:Name="EmailBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"/>
+                            <TextBox x:Name="EmailBox" local:Help.Topic="Email" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"/>
 
                             <TextBlock Text="CA" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="2" Margin="0,0,0,10"/>
-                            <ComboBox x:Name="CaBox" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10" SelectionChanged="CaBox_SelectionChanged"/>
+                            <ComboBox x:Name="CaBox" local:Help.Topic="Ca" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10" SelectionChanged="CaBox_SelectionChanged"/>
 
                             <TextBlock Text="Challenge" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="3"/>
-                            <ComboBox x:Name="ChallengeBox" Grid.Row="3" Grid.Column="1" SelectionChanged="ChallengeBox_SelectionChanged"/>
+                            <ComboBox x:Name="ChallengeBox" local:Help.Topic="Challenge" Grid.Row="3" Grid.Column="1" SelectionChanged="ChallengeBox_SelectionChanged"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -64,9 +65,9 @@
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                 <TextBlock Text="EAB Key ID" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,0,10"/>
-                                <TextBox x:Name="EabKeyIdBox" Grid.Column="1" Margin="0,0,0,10"/>
+                                <TextBox x:Name="EabKeyIdBox" local:Help.Topic="EabKid" Grid.Column="1" Margin="0,0,0,10"/>
                                 <TextBlock Text="EAB HMAC" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="1"/>
-                                <PasswordBox x:Name="EabHmacBox" Grid.Row="1" Grid.Column="1" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="10,7"/>
+                                <PasswordBox x:Name="EabHmacBox" local:Help.Topic="EabHmac" Grid.Row="1" Grid.Column="1" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="10,7"/>
                             </Grid>
                         </StackPanel>
                         <StackPanel x:Name="CustomCaGroup">
@@ -74,7 +75,7 @@
                             <Grid>
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                 <TextBlock Text="Directory URL" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
-                                <TextBox x:Name="CustomUrlBox" Grid.Column="1"/>
+                                <TextBox x:Name="CustomUrlBox" local:Help.Topic="CustomUrl" Grid.Column="1"/>
                             </Grid>
                         </StackPanel>
                     </StackPanel>
@@ -90,7 +91,7 @@
                                 <TextBlock Text="{DynamicResource Edit_Domains_Hint}" Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
                             </Border>
                         </Grid>
-                        <TextBox x:Name="DomainsBox" Height="92" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
+                        <TextBox x:Name="DomainsBox" local:Help.Topic="Domains" Height="92" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" FontFamily="{StaticResource MonoFont}" FontSize="12"/>
                     </StackPanel>
                 </Border>
 
@@ -102,7 +103,7 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                             <TextBlock Text="WebRoot" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
                             <TextBox x:Name="WebRootBox" Grid.Column="1" ToolTip="np. C:\inetpub\wwwroot"/>
-                            <Button Content="..." Grid.Column="2" Width="36" Margin="8,0,0,0" Click="BrowseWebRoot_Click"/>
+                            <Button local:ButtonIcon.Kind="Browse" Content="" Grid.Column="2" Width="36" Margin="8,0,0,0" Click="BrowseWebRoot_Click" local:Help.Topic="BrowseWebRoot"/>
                         </Grid>
                         <Border Background="#0F1A31" CornerRadius="8" Padding="10,8" Margin="0,10,0,0" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1">
                             <TextBlock Text="{DynamicResource Edit_Http_Hint}" Foreground="{StaticResource TextMutedBrush}" FontSize="11" TextWrapping="Wrap"/>
@@ -118,7 +119,7 @@
                             <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                             <TextBlock Text="{DynamicResource Edit_Dns_Provider}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,0,10"/>
-                            <ComboBox x:Name="DnsProviderBox" Grid.Column="1" Margin="0,0,0,10" SelectionChanged="DnsProviderBox_SelectionChanged"/>
+                            <ComboBox x:Name="DnsProviderBox" local:Help.Topic="DnsProvider" Grid.Column="1" Margin="0,0,0,10" SelectionChanged="DnsProviderBox_SelectionChanged"/>
                             <TextBlock Text="CF API Token" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="1" Margin="0,0,0,10"/>
                             <PasswordBox x:Name="CloudflareTokenBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,10" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="10,7" ToolTip="Token Bearer: Zone DNS Edit + Zone Read"/>
                             <TextBlock Text="{DynamicResource Edit_Dns_Prop}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="2"/>
@@ -131,13 +132,13 @@
                                 <TextBlock Text="AWS Key ID" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,0,10"/>
                                 <TextBox x:Name="AwsKeyBox" Grid.Column="1" Margin="0,0,0,10" ToolTip="IAM: route53:ChangeResourceRecordSets + ListHostedZonesByName + GetChange"/>
                                 <TextBlock Text="AWS Secret" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="1"/>
-                                <PasswordBox x:Name="AwsSecretBox" Grid.Row="1" Grid.Column="1" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="10,7"/>
+                                <PasswordBox x:Name="AwsSecretBox" local:Help.Topic="AwsKeys" Grid.Row="1" Grid.Column="1" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="10,7"/>
                             </Grid>
                         </StackPanel>
                         <Border Background="#0F1A31" CornerRadius="8" Padding="10,8" Margin="0,10,0,0" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1">
                             <TextBlock Text="{DynamicResource Edit_Dns_Hint}" Foreground="{StaticResource TextMutedBrush}" FontSize="11" TextWrapping="Wrap"/>
                         </Border>
-                        <Button Content="{DynamicResource Edit_Btn_CleanTxt}" Click="CleanupTxt_Click" HorizontalAlignment="Left" MinWidth="170" Margin="0,10,0,0" Padding="12,7" ToolTip="{DynamicResource Edit_Tip_CleanTxt}"/>
+                        <Button local:ButtonIcon.Kind="Clear" Content="{DynamicResource Edit_Btn_CleanTxt}" Click="CleanupTxt_Click" HorizontalAlignment="Left" MinWidth="170" Margin="0,10,0,0" Padding="12,7" ToolTip="{DynamicResource Edit_Tip_CleanTxt}"/>
                     </StackPanel>
                 </Border>
 
@@ -146,31 +147,34 @@
                     <StackPanel>
                         <TextBlock Text="{DynamicResource Edit_Sec_Depl}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="Bold" Margin="0,0,0,12"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
-                            <CheckBox x:Name="ChkIIS" Content="IIS" Margin="0,0,18,0" Click="DeployTarget_Click"/>
-                            <CheckBox x:Name="ChkApache" Content="Apache" Margin="0,0,18,0" Click="DeployTarget_Click"/>
-                            <CheckBox x:Name="ChkNginx" Content="Nginx" Click="DeployTarget_Click"/>
+                            <CheckBox x:Name="ChkIIS" local:Help.Topic="DeployTargets" Content="IIS" Margin="0,0,18,0" Click="DeployTarget_Click"/>
+                            <CheckBox x:Name="ChkApache" local:Help.Topic="DeployTargets" Content="Apache" Margin="0,0,18,0" Click="DeployTarget_Click"/>
+                            <CheckBox x:Name="ChkNginx" local:Help.Topic="DeployTargets" Content="Nginx" Click="DeployTarget_Click"/>
                         </StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                             <!-- IIS: jedno pole site'u; "Pobierz z IIS" dopisuje hostnames do domen i ustawia WebRoot -->
                             <TextBlock x:Name="IisSiteLabel" Text="IIS Site Name" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="0" Margin="0,0,0,4"/>
                             <Grid x:Name="IisSiteRow" Grid.Row="0" Grid.Column="1" Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                <ComboBox x:Name="IisSiteBox" IsEditable="True"/>
-                                <Button Content="{DynamicResource Edit_Btn_GetIis}" Grid.Column="1" Margin="8,0,0,0" Padding="12,7" Click="ImportFromIis_Click" ToolTip="{DynamicResource Edit_Tip_GetIis}"/>
+                                <ComboBox x:Name="IisSiteBox" local:Help.Topic="IisSite" IsEditable="True" SelectionChanged="IisSiteBox_SelectionChanged"/>
+                                <Button local:ButtonIcon.Kind="Iis" Content="{DynamicResource Edit_Btn_GetIis}" Grid.Column="1" Margin="8,0,0,0" Padding="12,7" Click="ImportFromIis_Click" ToolTip="{DynamicResource Edit_Tip_GetIis}"/>
                             </Grid>
                             <TextBlock x:Name="IisStatusText" Grid.Row="1" Grid.Column="1" Text="" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
 
-                            <!-- Apache / Nginx -->
-                            <TextBlock x:Name="ConfigPathLabel" Text="Config Path" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="2" Margin="0,0,0,10"/>
-                            <Grid x:Name="ConfigPathRow" Grid.Row="2" Grid.Column="1" Margin="0,0,0,10">
+                            <!-- Apache / Nginx: witryny ze skanu konfiguracji (wybor = config + domeny + WebRoot + usluga) -->
+                            <TextBlock x:Name="WebSiteLabel" Text="{DynamicResource Edit_Lbl_WebSite}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="2" Margin="0,0,0,4"/>
+                            <ComboBox x:Name="WebSiteBox" local:Help.Topic="WebSite" Grid.Row="2" Grid.Column="1" Margin="0,0,0,4" DisplayMemberPath="Display" SelectionChanged="WebSiteBox_SelectionChanged"/>
+                            <TextBlock x:Name="WebStatusText" Grid.Row="3" Grid.Column="1" Text="" Foreground="{StaticResource TextSecondaryBrush}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <TextBlock x:Name="ConfigPathLabel" Text="Config Path" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="4" Margin="0,0,0,10"/>
+                            <Grid x:Name="ConfigPathRow" Grid.Row="4" Grid.Column="1" Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                <TextBox x:Name="ConfigPathBox"/>
-                                <Button Content="..." Grid.Column="1" Width="36" Margin="8,0,0,0" Click="BrowseConfig_Click"/>
+                                <TextBox x:Name="ConfigPathBox" local:Help.Topic="ConfigPath"/>
+                                <Button local:ButtonIcon.Kind="Browse" Content="" Grid.Column="1" Width="36" Margin="8,0,0,0" Click="BrowseConfig_Click" local:Help.Topic="ConfigPath"/>
                             </Grid>
-                            <TextBlock x:Name="ServiceLabel" Text="{DynamicResource Edit_Lbl_Service}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="3"/>
-                            <TextBox x:Name="ServiceBox" Grid.Row="3" Grid.Column="1" ToolTip="{DynamicResource Edit_Tip_Service}"/>
+                            <TextBlock x:Name="ServiceLabel" Text="{DynamicResource Edit_Lbl_Service}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Grid.Row="5"/>
+                            <TextBox x:Name="ServiceBox" Grid.Row="5" Grid.Column="1" ToolTip="{DynamicResource Edit_Tip_Service}"/>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -180,9 +184,9 @@
                     <Grid>
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <CheckBox x:Name="AutoRenewCheck" Content="{DynamicResource Edit_AutoRenew}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                            <CheckBox x:Name="AutoRenewCheck" local:Help.Topic="AutoRenew" Content="{DynamicResource Edit_AutoRenew}" VerticalAlignment="Center" Margin="0,0,14,0"/>
                             <TextBlock Text="{DynamicResource Edit_DaysBefore}" Foreground="{StaticResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBox x:Name="RenewDaysBox" Width="62" VerticalAlignment="Center" ToolTip="{DynamicResource Edit_Recommended}"/>
+                            <local:NumericUpDown x:Name="RenewDaysBox" local:Help.Topic="RenewDays" Width="84" Minimum="1" Maximum="365" VerticalAlignment="Center" ToolTip="{DynamicResource Edit_Recommended}"/>
                         </StackPanel>
                     </Grid>
                 </Border>
@@ -191,18 +195,18 @@
                 <Border Background="{StaticResource CardGradient}" CornerRadius="12" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="16" Margin="0,12,0,0">
                     <StackPanel>
                         <TextBlock Text="{DynamicResource Edit_Sec_TasksDepl}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="Bold" Margin="0,0,0,10"/>
-                        <ListBox x:Name="DeploymentTasksList" Height="86" DisplayMemberPath="TaskDisplay" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="4" FontSize="12"/>
+                        <ListBox x:Name="DeploymentTasksList" local:Help.Topic="DepTasks" Height="86" DisplayMemberPath="TaskDisplay" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="4" FontSize="12"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="{DynamicResource Edit_Btn_Add}" MinWidth="90" Margin="0,0,8,0" Click="AddDepTask_Click" FontSize="12"/>
-                            <Button Content="{DynamicResource Btn_Edit}" MinWidth="90" Margin="0,0,8,0" Click="EditDepTask_Click" FontSize="12"/>
-                            <Button Content="{DynamicResource Btn_Delete}" MinWidth="90" Click="DelDepTask_Click" FontSize="12"/>
+                            <Button local:ButtonIcon.Kind="Add" Content="{DynamicResource Edit_Btn_Add}" MinWidth="90" Margin="0,0,8,0" Click="AddDepTask_Click" local:Help.Topic="DepTasks" FontSize="12"/>
+                            <Button local:ButtonIcon.Kind="Edit" Content="{DynamicResource Btn_Edit}" MinWidth="90" Margin="0,0,8,0" Click="EditDepTask_Click" local:Help.Topic="DepTasks" FontSize="12"/>
+                            <Button local:ButtonIcon.Kind="Delete" Content="{DynamicResource Btn_Delete}" MinWidth="90" Click="DelDepTask_Click" local:Help.Topic="DepTasks" FontSize="12"/>
                         </StackPanel>
                         <TextBlock Text="{DynamicResource Edit_Sec_TasksPre}" Foreground="{StaticResource TextMutedBrush}" FontSize="10" FontWeight="Bold" Margin="0,16,0,10"/>
-                        <ListBox x:Name="PreRequestTasksList" Height="86" DisplayMemberPath="TaskDisplay" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="4" FontSize="12"/>
+                        <ListBox x:Name="PreRequestTasksList" local:Help.Topic="PreTasks" Height="86" DisplayMemberPath="TaskDisplay" Background="#0F1A31" Foreground="{StaticResource TextPrimaryBrush}" BorderBrush="{StaticResource BorderBrush2}" BorderThickness="1" Padding="4" FontSize="12"/>
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="{DynamicResource Edit_Btn_Add}" MinWidth="90" Margin="0,0,8,0" Click="AddPreTask_Click" FontSize="12"/>
-                            <Button Content="{DynamicResource Btn_Edit}" MinWidth="90" Margin="0,0,8,0" Click="EditPreTask_Click" FontSize="12"/>
-                            <Button Content="{DynamicResource Btn_Delete}" MinWidth="90" Click="DelPreTask_Click" FontSize="12"/>
+                            <Button local:ButtonIcon.Kind="Add" Content="{DynamicResource Edit_Btn_Add}" MinWidth="90" Margin="0,0,8,0" Click="AddPreTask_Click" local:Help.Topic="PreTasks" FontSize="12"/>
+                            <Button local:ButtonIcon.Kind="Edit" Content="{DynamicResource Btn_Edit}" MinWidth="90" Margin="0,0,8,0" Click="EditPreTask_Click" local:Help.Topic="PreTasks" FontSize="12"/>
+                            <Button local:ButtonIcon.Kind="Delete" Content="{DynamicResource Btn_Delete}" MinWidth="90" Click="DelPreTask_Click" local:Help.Topic="PreTasks" FontSize="12"/>
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -213,8 +217,8 @@
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="{DynamicResource Btn_Cancel}" MinWidth="100" Margin="0,0,8,0" Click="Cancel_Click" IsCancel="True"/>
-                    <Button Content="{DynamicResource Btn_Save}" MinWidth="120" Click="Save_Click" IsDefault="True" Style="{StaticResource PrimaryButton}"/>
+                    <Button local:ButtonIcon.Kind="Cancel" Content="{DynamicResource Btn_Cancel}" MinWidth="100" Margin="0,0,8,0" Click="Cancel_Click" IsCancel="True"/>
+                    <Button local:ButtonIcon.Kind="Save" Content="{DynamicResource Btn_Save}" MinWidth="120" Click="Save_Click" IsDefault="True" Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>
         </Border>

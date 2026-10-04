@@ -531,11 +531,10 @@ public partial class MainWindow : Window
         });
     }
 
-    private async void TaskScheduler_Click(object sender, RoutedEventArgs e) => await RunWithProgress("Task Scheduler", async (log, ct) =>
-    {
-        await Task.Run(() => TaskSchedulerHelper.TryCreateTask(log), ct);
-        log.Report($"Polecenie: {TaskSchedulerHelper.GetCreateCommand()}");
-    });
+    private void Help_Click(object sender, RoutedEventArgs e) => Help.ToggleMode();
+
+    private void TaskScheduler_Click(object sender, RoutedEventArgs e) =>
+        new SchedulerWindow(RunWithProgress) { Owner = this }.ShowDialog();
 
     private void ClearLog_Click(object sender, RoutedEventArgs e) => LogBox.Clear();
 

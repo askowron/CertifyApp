@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Certify.Core.Models;
 using Certify.Core.Services;
+using Certify.Deployment;
 using Microsoft.Win32;
 
 namespace Certify.WPF;
@@ -50,7 +51,7 @@ public partial class CertificateEditWindow : Window
         DnsPropBox.Text = _cert.ChallengeConfig.DnsPropagationSeconds.ToString();
         UpdateDnsVisibility();
         AutoRenewCheck.IsChecked = _cert.RenewalMode == RenewalMode.Auto;
-        RenewDaysBox.Text = _cert.RenewalDaysBeforeExpiry.ToString();
+        RenewDaysBox.Value = _cert.RenewalDaysBeforeExpiry;
 
         ChkIIS.IsChecked = _cert.DeploymentTargets.Any(d => d.TargetType == DeploymentTargetType.IIS);
         ChkApache.IsChecked = _cert.DeploymentTargets.Any(d => d.TargetType == DeploymentTargetType.Apache);
@@ -73,6 +74,7 @@ public partial class CertificateEditWindow : Window
         catch { _tasksEdit = new(); }
         RefreshTaskLists();
 
+        Loaded += async (_, _) => await RefreshWebSitesAsync();
         // try discover IIS sites (z diagnostyka - wczesniej puste przy braku uprawnien)
         Loaded += async (_, _) =>
         {
@@ -83,6 +85,7 @@ public partial class CertificateEditWindow : Window
                 {
                     var (sites, error) = await iisDepl.DiscoverSitesDetailedAsync();
                     IisSiteBox.ItemsSource = sites;
+                    _iisSitesLoaded = true;
                     IisStatusText.Text = sites.Count > 0
                         ? WpfLocalizer.T("Edit_Iis_Found", string.Join(", ", sites))
                         : WpfLocalizer.T("Edit_Iis_None", error ?? "?");
@@ -91,6 +94,7 @@ public partial class CertificateEditWindow : Window
                 {
                     var sites = await iis.DiscoverSitesAsync();
                     IisSiteBox.ItemsSource = sites;
+                    _iisSitesLoaded = true;
                 }
             }
             catch (Exception ex)
@@ -107,9 +111,142 @@ public partial class CertificateEditWindow : Window
         var file = ChkApache.IsChecked == true || ChkNginx.IsChecked == true ? Visibility.Visible : Visibility.Collapsed;
         IisSiteLabel.Visibility = IisSiteRow.Visibility = IisStatusText.Visibility = iis;
         ConfigPathLabel.Visibility = ConfigPathRow.Visibility = ServiceLabel.Visibility = ServiceBox.Visibility = file;
+        WebSiteLabel.Visibility = WebSiteBox.Visibility = WebStatusText.Visibility = file;
     }
 
-    private void DeployTarget_Click(object sender, RoutedEventArgs e) => UpdateDeployVisibility();
+    private async void DeployTarget_Click(object sender, RoutedEventArgs e)
+    {
+        UpdateDeployVisibility();
+        await RefreshWebSitesAsync();
+    }
+
+    // WebRoot ustawiony automatycznie z poprzednio wybranego site'u - tylko taki nadpisujemy.
+    private string? _autoWebRoot;
+    // false do czasu zaladowania listy site'ow - wybor przy otwarciu okna nie dopisuje domen.
+    private bool _iisSitesLoaded;
+
+    /// <summary>
+    /// Wybor site'u z listy = automatyczny "Pobierz z IIS": hostnames -> domeny,
+    /// sciezka fizyczna -> WebRoot (o ile pole puste albo ustawione wczesniej automatycznie).
+    /// Wynik w IisStatusText zamiast MessageBox.
+    /// </summary>
+    private async void IisSiteBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (IisSiteBox.SelectedItem is not string site || string.IsNullOrWhiteSpace(site)) return;
+        if (_deployers.FirstOrDefault(d => d.TargetType == DeploymentTargetType.IIS) is not { } iis) return;
+
+        TrySetAutoWebRoot((iis as Certify.Deployment.IisDeployer)?.GetSitePhysicalPath(site));
+        if (!_iisSitesLoaded) return;
+
+        List<string> hosts;
+        try { hosts = await iis.DiscoverSiteBindingsAsync(site); }
+        catch (Exception ex) { IisStatusText.Text = WpfLocalizer.T("Edit_Msg_BindErr", ex.Message); return; }
+        // uzytkownik zdazyl wybrac inny site
+        if (!Equals(IisSiteBox.SelectedItem, site)) return;
+        if (hosts.Count == 0) { IisStatusText.Text = WpfLocalizer.T("Edit_Msg_NoBind", site); return; }
+        var added = AppendDomains(hosts);
+        IisStatusText.Text = WpfLocalizer.T("Edit_Msg_Imported", hosts.Count, site, added);
+    }
+
+    /// <summary>WebRoot = path, o ile pole puste albo ustawione wczesniej automatycznie (recznej sciezki nie ruszamy).</summary>
+    private void TrySetAutoWebRoot(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return;
+        var current = WebRootBox.Text.Trim();
+        var isAuto = current.Length == 0
+            || (_autoWebRoot != null && string.Equals(current.TrimEnd('\\'), _autoWebRoot.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
+        if (!isAuto) return;
+        WebRootBox.Text = path;
+        _autoWebRoot = path;
+    }
+
+    // Wyniki skanu Apache/Nginx (cache per typ - ponowne zaznaczenie checkboxa nie skanuje od nowa).
+    private readonly Dictionary<WebServerKind, List<WebServerSite>> _webScans = new();
+    private bool _webScanning;
+
+    /// <summary>
+    /// Skan konfiguracji dla zaznaczonych Apache/Nginx (w tle - sc.exe + odczyt plikow).
+    /// Lista "Witryna" pokazuje witryny tylko zaznaczonych typow.
+    /// </summary>
+    private async Task RefreshWebSitesAsync()
+    {
+        var kinds = new List<WebServerKind>();
+        if (ChkApache.IsChecked == true) kinds.Add(WebServerKind.Apache);
+        if (ChkNginx.IsChecked == true) kinds.Add(WebServerKind.Nginx);
+        if (kinds.Count == 0 || _webScanning) return;
+        var missing = kinds.Where(k => !_webScans.ContainsKey(k)).ToList();
+        if (missing.Count > 0)
+        {
+            _webScanning = true;
+            WebStatusText.Text = WpfLocalizer.T("Edit_Web_Scanning");
+            try
+            {
+                foreach (var k in missing)
+                    _webScans[k] = await Task.Run(() => WebServerConfigScanner.Scan(k));
+            }
+            catch (Exception ex) { WebStatusText.Text = ex.Message; return; }
+            finally { _webScanning = false; }
+        }
+        // Typy mogly sie zmienic w trakcie skanu.
+        kinds = kinds.Where(k => (k == WebServerKind.Apache ? ChkApache : ChkNginx).IsChecked == true).ToList();
+        var sites = kinds.SelectMany(k => _webScans.TryGetValue(k, out var s) ? s : []).ToList();
+        _webSitesLoading = true;
+        WebSiteBox.ItemsSource = sites;
+        // Pokaz witryne z zapisanego configu (bez importu - to tylko podglad stanu).
+        var cfg = ConfigPathBox.Text.Trim();
+        WebSiteBox.SelectedItem = cfg.Length == 0 ? null
+            : sites.FirstOrDefault(s => string.Equals(s.ConfigFile, cfg, StringComparison.OrdinalIgnoreCase));
+        _webSitesLoading = false;
+        var names = string.Join("/", kinds);
+        WebStatusText.Text = sites.Count > 0
+            ? WpfLocalizer.T("Edit_Web_Found", sites.Count, names)
+            : WpfLocalizer.T("Edit_Web_None", names);
+    }
+
+    private bool _webSitesLoading;
+
+    /// <summary>
+    /// Wybor witryny Apache/Nginx: ConfigPath = plik witryny, hostnames -> domeny, DocumentRoot/root -> WebRoot,
+    /// usluga (jesli wykryta z uslugi i pole puste). Ostrzezenie, gdy plik ma kilka witryn SSL -
+    /// deployer podmienia dyrektywy certyfikatu w calym pliku.
+    /// </summary>
+    private void WebSiteBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_webSitesLoading || WebSiteBox.SelectedItem is not WebServerSite site) return;
+        ConfigPathBox.Text = site.ConfigFile;
+        TrySetAutoWebRoot(site.DocumentRoot);
+        if (string.IsNullOrWhiteSpace(ServiceBox.Text) && site.ServiceName != null) ServiceBox.Text = site.ServiceName;
+
+        // Wildcard nie przejdzie http-01 - przy http-01 nie dopisujemy; localhost nigdy.
+        var http01 = ChallengeBox.SelectedItem is ChallengeType ct && ct == ChallengeType.Http01;
+        var hosts = site.Hostnames
+            .Where(h => !h.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+            .Where(h => !(http01 && h.Contains('*')))
+            .ToList();
+        var lines = new List<string>();
+        if (hosts.Count > 0)
+            lines.Add(WpfLocalizer.T("Edit_Msg_Imported", hosts.Count, site.Hostnames.FirstOrDefault() ?? site.ConfigFile, AppendDomains(hosts)));
+        var sslInFile = (WebSiteBox.ItemsSource as IEnumerable<WebServerSite> ?? [])
+            .Count(s => s.Ssl && string.Equals(s.ConfigFile, site.ConfigFile, StringComparison.OrdinalIgnoreCase));
+        if (sslInFile > 1)
+            lines.Add(WpfLocalizer.T("Edit_Web_Shared", Path.GetFileName(site.ConfigFile), sslInFile));
+        WebStatusText.Text = string.Join("\n", lines);
+    }
+
+    /// <summary>Dopisuje brakujace hostnames do pola domen; zwraca liczbe dopisanych.</summary>
+    private int AppendDomains(IEnumerable<string> hosts)
+    {
+        var current = DomainsBox.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+        var added = 0;
+        foreach (var h in hosts)
+        {
+            if (!current.Any(c => c.Equals(h, StringComparison.OrdinalIgnoreCase)))
+            { current.Add(h); added++; }
+        }
+        DomainsBox.Text = string.Join(Environment.NewLine, current);
+        return added;
+    }
 
     /// <summary>
     /// Hostnames z bindingow site'u -> lista domen, sciezka fizyczna site'u -> WebRoot
@@ -129,6 +266,7 @@ public partial class CertificateEditWindow : Window
         if (physicalPath != null && !string.Equals(WebRootBox.Text.Trim().TrimEnd('\\'), physicalPath.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase))
         {
             WebRootBox.Text = physicalPath;
+            _autoWebRoot = physicalPath;
             webrootMsg = "\n\n" + WpfLocalizer.T("Edit_Msg_WebrootSet", site, physicalPath);
         }
         if (hosts.Count == 0)
@@ -136,15 +274,7 @@ public partial class CertificateEditWindow : Window
             MessageBox.Show(WpfLocalizer.T("Edit_Msg_NoBind", site) + webrootMsg);
             return;
         }
-        var current = DomainsBox.Text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(s => s.Trim()).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-        var added = 0;
-        foreach (var h in hosts)
-        {
-            if (!current.Any(c => c.Equals(h, StringComparison.OrdinalIgnoreCase)))
-            { current.Add(h); added++; }
-        }
-        DomainsBox.Text = string.Join(Environment.NewLine, current);
+        var added = AppendDomains(hosts);
         MessageBox.Show(WpfLocalizer.T("Edit_Msg_Imported", hosts.Count, site, added) + webrootMsg);
     }
 
@@ -350,7 +480,7 @@ public partial class CertificateEditWindow : Window
         _cert.Domains = domains;
         _cert.ChallengeConfig = challengeConfig;
         _cert.RenewalMode = AutoRenewCheck.IsChecked == true ? RenewalMode.Auto : RenewalMode.Manual;
-        if (int.TryParse(RenewDaysBox.Text, out var d) && d >= 1) _cert.RenewalDaysBeforeExpiry = d;
+        _cert.RenewalDaysBeforeExpiry = RenewDaysBox.Value;
         _cert.Tasks = _tasksEdit;
 
         // Deployment targets (puste ServiceName = wykryj usluge przy wdrozeniu)

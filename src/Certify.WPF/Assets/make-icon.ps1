@@ -1,4 +1,5 @@
-param([string]$OutIco, [string]$PreviewPng)
+# -OutIco: plik .ico (wszystkie rozmiary); -OutPng: osobny PNG (ikona pakietu NuGet, domyslnie 128 px).
+param([string]$OutIco, [string]$PreviewPng, [string]$OutPng, [int]$PngSize = 128)
 Add-Type -AssemblyName System.Drawing
 
 function New-IconBitmap([int]$s) {
@@ -69,6 +70,14 @@ $pngs = foreach ($s in $sizes) {
     $b.Dispose()
     , $bytes
 }
+
+if ($OutPng) {
+    $b = New-IconBitmap $PngSize
+    $b.Save($OutPng, [System.Drawing.Imaging.ImageFormat]::Png)
+    $b.Dispose()
+    "OK $OutPng ($((Get-Item $OutPng).Length) B, ${PngSize}x${PngSize})"
+}
+if (-not $OutIco) { return }
 
 # ICO: ICONDIR + ICONDIRENTRY[] + ramki.
 $fs = [System.IO.File]::Create($OutIco)

@@ -58,6 +58,7 @@ public partial class App : Application
         }
 
         AppInfo.RegisterWindowIcon();
+        Help.Register();
         var main = new MainWindow();
         MainWindow = main;
         main.Show();

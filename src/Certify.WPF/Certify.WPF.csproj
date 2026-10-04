@@ -21,14 +21,55 @@
     <!-- Ostre skalowanie na ekranach HiDPI (125/150/175%): bez tego Windows
          bitmapowo rozciaga cale okno i wszystkie fonty sa rozmazane. -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <AssemblyVersion>26.10.4.4</AssemblyVersion>
+    <AssemblyVersion>26.10.5.1</AssemblyVersion>
     <!-- Ikona pliku exe (Eksplorator, pasek zadan, skrot ClickOnce) -->
     <ApplicationIcon>Assets\certify.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- Metadane: wlasciwosci pliku CertifyApp.exe (Eksplorator -> Szczegoly) i ewentualny pakiet NuGet. -->
+  <PropertyGroup>
+    <!-- Jedno zrodlo wersji: bez tego "Wersja produktu" exe pokazywala domyslne 1.0.0.
+         FileVersion/InformationalVersion/PackageVersion dziedzicza z Version. -->
+    <Version>$(AssemblyVersion)</Version>
+    <Product>CertifyApp</Product>
+    <AssemblyTitle>CertifyApp – ACME certificate manager</AssemblyTitle>
+    <Description>Windows desktop manager for ACME v2 certificates (Let's Encrypt, ZeroSSL, Google Public CA, custom ACME) with automatic deployment to IIS, Apache and Nginx, renewal via Windows service or Task Scheduler.</Description>
+    <Authors>Adam Skowroński</Authors>
+    <Company>APPIT Adam Skowroński</Company>
+    <Copyright>Copyright (c) 2026 APPIT Adam Skowroński</Copyright>
+    <NeutralLanguage>pl</NeutralLanguage>
+
+    <PackageId>CertifyApp</PackageId>
+    <PackageLicenseExpression>PolyForm-Noncommercial-1.0.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- NuGet wymaga PNG/JPEG (nie .ico); generowane: Assets\make-icon.ps1 -OutPng Assets\certify.png -->
+    <PackageIcon>certify.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/askowron/CertifyApp</PackageProjectUrl>
+    <PackageTags>acme;acme-v2;letsencrypt;zerossl;google-public-ca;ssl;tls;certificate;https;iis;apache;nginx;certify-the-web;wpf;windows</PackageTags>
+    <RepositoryUrl>https://github.com/askowron/CertifyApp.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryBranch>main</RepositoryBranch>
+    <PackageReleaseNotes>
+26.10.5.1
+- Apache/Nginx: skan konfiguracji (usługi Windows, typowe katalogi, Include/include) i lista witryn do wyboru – ustawia plik konfiguracji, domeny, WebRoot i usługę.
+- IIS: wybór witryny z listy automatycznie importuje hostnames i ustawia WebRoot.
+- Okno Harmonogramu zadań: utwórz, zmień godzinę, uruchom teraz, włącz/wyłącz, usuń; status, ostatnie/następne uruchomienie, wykrycie nieaktualnej ścieżki exe.
+- Pomoc kontekstowa: F1, Shift+F1 i przycisk Pomoc (tryb „Co to jest?”) z opisami w 20 językach.
+- Kolorowe ikony na wszystkich przyciskach; nowe pola wyboru; pole liczbowe ze strzałkami dla dni przed wygaśnięciem.
+- Okno edycji certyfikatu można maksymalizować i zmieniać jego rozmiar.
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
     <!-- Ikona okien: AppInfo.Icon laduje ja przez pack://application:,,,/Assets/certify.ico -->
     <Resource Include="Assets\certify.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- README do pakietu (PackageReadmeFile); nie trafia do publish/instalatora. -->
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
+    <None Include="Assets\certify.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

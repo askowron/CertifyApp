@@ -1,6 +1,7 @@
 <Window x:Class="Certify.WPF.PreviewWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:Certify.WPF"
         Title="{DynamicResource Win_Preview_Title}" Height="620" Width="640" WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Background="{StaticResource BgBrush}" FontFamily="{StaticResource MainFont}"
         TextOptions.TextFormattingMode="Display"
@@ -63,7 +64,7 @@
             <Grid>
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <TextBlock x:Name="PreviewFooter" Text="" Foreground="{StaticResource TextMutedBrush}" FontSize="12" VerticalAlignment="Center"/>
-                <Button Grid.Column="1" Content="{DynamicResource Btn_Close}" MinWidth="120" Click="Close_Click" IsCancel="True" IsDefault="True" Style="{StaticResource PrimaryButton}"/>
+                <Button local:ButtonIcon.Kind="Close" Grid.Column="1" Content="{DynamicResource Btn_Close}" MinWidth="120" Click="Close_Click" IsCancel="True" IsDefault="True" Style="{StaticResource PrimaryButton}"/>
             </Grid>
         </Border>
     </Grid>

@@ -8,7 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <!-- Microsoft.Web.Administration (przez Certify.Deployment) jest pakietem .NET Framework - jak w aplikacji. -->
     <NoWarn>$(NoWarn);NU1701</NoWarn>
-    <AssemblyVersion>26.10.4.4</AssemblyVersion>
+    <AssemblyVersion>26.10.5.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
