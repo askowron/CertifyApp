@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Certify.ACME/Certify.ACME.csproj" />
+    <Project Path="src/Certify.Core/Certify.Core.csproj" />
+    <Project Path="src/Certify.Deployment/Certify.Deployment.csproj" />
+    <Project Path="src/Certify.Service/Certify.Service.csproj" />
+    <Project Path="src/Certify.WPF/Certify.WPF.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Certify.Tests/Certify.Tests.csproj" />
+  </Folder>
+</Solution>

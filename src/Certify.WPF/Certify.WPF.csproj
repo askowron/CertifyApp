@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Certify.Core\Certify.Core.csproj" />
+    <ProjectReference Include="..\Certify.ACME\Certify.ACME.csproj" />
+    <ProjectReference Include="..\Certify.Deployment\Certify.Deployment.csproj" />
+    <!-- Certify.Service.exe ląduje obok aplikacji (takze w publikacji ClickOnce);
+         GUI kopiuje go do Program Files i rejestruje jako usluge Windows. -->
+    <ProjectReference Include="..\Certify.Service\Certify.Service.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Plik wynikowy CertifyApp.exe; namespace zostaje Certify.WPF -->
+    <AssemblyName>CertifyApp</AssemblyName>
+    <RootNamespace>Certify.WPF</RootNamespace>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Ostre skalowanie na ekranach HiDPI (125/150/175%): bez tego Windows
+         bitmapowo rozciaga cale okno i wszystkie fonty sa rozmazane. -->
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <AssemblyVersion>26.10.4.4</AssemblyVersion>
+    <!-- Ikona pliku exe (Eksplorator, pasek zadan, skrot ClickOnce) -->
+    <ApplicationIcon>Assets\certify.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Ikona okien: AppInfo.Icon laduje ja przez pack://application:,,,/Assets/certify.ico -->
+    <Resource Include="Assets\certify.ico" />
+  </ItemGroup>
+
+</Project>

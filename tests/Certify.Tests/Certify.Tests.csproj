@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Microsoft.Web.Administration (przez Certify.Deployment) jest pakietem .NET Framework - jak w aplikacji. -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+    <AssemblyVersion>26.10.4.4</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Certify.Core\Certify.Core.csproj" />
+    <ProjectReference Include="..\..\src\Certify.ACME\Certify.ACME.csproj" />
+    <ProjectReference Include="..\..\src\Certify.Deployment\Certify.Deployment.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
