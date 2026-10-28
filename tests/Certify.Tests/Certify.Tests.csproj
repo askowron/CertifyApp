@@ -8,7 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <!-- Microsoft.Web.Administration (przez Certify.Deployment) jest pakietem .NET Framework - jak w aplikacji. -->
     <NoWarn>$(NoWarn);NU1701</NoWarn>
-    <AssemblyVersion>26.10.5.1</AssemblyVersion>
+    <AssemblyVersion>26.10.28.1</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\Certify.Core\Certify.Core.csproj" />
     <ProjectReference Include="..\..\src\Certify.ACME\Certify.ACME.csproj" />
     <ProjectReference Include="..\..\src\Certify.Deployment\Certify.Deployment.csproj" />
+    <ProjectReference Include="..\..\src\Certify.Service\Certify.Service.csproj" />
   </ItemGroup>
 
   <ItemGroup>

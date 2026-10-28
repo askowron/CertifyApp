@@ -9,7 +9,10 @@ namespace Certify.Service;
 /// <summary>Sklada RenewalService bez UI (usluga Windows i tryb --renew).</summary>
 public static class RenewalHost
 {
-    public static RenewalService Create(AppSettings settings)
+    public static RenewalService Create(AppSettings settings) => CreateParts(settings).Renewal;
+
+    /// <summary>Jak Create, ale zwraca tez store i CA (potrzebne dla CertificateRequestRunner).</summary>
+    public static (CertificateStore Store, ICertificateAuthorityProvider Ca, RenewalService Renewal) CreateParts(AppSettings settings)
     {
         // Jezyk e-maili i komunikatow statusu jak w GUI.
         UIStrings.Lang = UIStrings.ResolveLang(settings.Language,
@@ -17,7 +20,7 @@ public static class RenewalHost
         var store = new CertificateStore(settings);
         var acme = new LetsEncryptService(settings);
         var deployers = new List<IDeploymentTarget> { new IisDeployer(), new ApacheDeployer(), new NginxDeployer() };
-        return new RenewalService(store, acme, deployers, settings, new EmailNotifier(settings));
+        return (store, acme, new RenewalService(store, acme, deployers, settings, new EmailNotifier(settings)));
     }
 }
 

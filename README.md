@@ -159,6 +159,24 @@ schtasks /Create /SC DAILY /TN "CertifyApp Renew" /TR "CertifyApp.exe --renew" /
 - Buypass pominięty świadomie (GoSSL ACME wygaszane); zamiast niego Custom ACME.
 - Certyfikaty na IP wydaje w praktyce tylko Let's Encrypt (ZeroSSL nie wspiera IP).
 
+## Zamówienie certyfikatu z wiersza poleceń (`--request`)
+
+`Certify.Service.exe --request <host> --site <strona IIS> [--template <istniejąca domena>] [--webroot <ścieżka>]`
+zamawia i wdraża certyfikat HTTPS dla nowego hosta na podstawie istniejącego certyfikatu-szablonu
+(CA, konto, challenge i wdrożenie kopiowane z szablonu; domyślnie szablon ZeroSSL http-01 z tej samej strefy).
+Wymaga uprawnień administratora, nie pokazuje okien i nie uruchamia usługi odnowień.
+Postęp idzie na stdout i do `logs\request-<data>.txt`, a ostatnia linia stdout to zawsze
+`CERTIFYAPP-REQUEST {json}` (pola `result`, `host`, `expiry`, `thumbprint`, `message`).
+
+| Kod | Znaczenie |
+|---|---|
+| 0 | certyfikat wystawiony i wdrożony albo był już ważny (`issued` / `valid`) |
+| 1 | błąd zamówienia lub brak szablonu (`failed`) |
+| 2 | złe argumenty albo brak strony IIS (`badargs`) |
+| 3 | CertifyApp zajęty inną operacją przez 30 min (`busy`) |
+| 4 | brak uprawnień administratora (`notadmin`) |
+| 5 | certyfikat wystawiony, ale wdrożenie w IIS się nie powiodło (`deployfailed`) |
+
 ## Instalator (NSIS)
 
 `tools\Build-Installer.ps1` robi `dotnet publish` (win-x64, framework-dependent)

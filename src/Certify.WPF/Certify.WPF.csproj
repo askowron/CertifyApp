@@ -21,7 +21,7 @@
     <!-- Ostre skalowanie na ekranach HiDPI (125/150/175%): bez tego Windows
          bitmapowo rozciaga cale okno i wszystkie fonty sa rozmazane. -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <AssemblyVersion>26.10.5.1</AssemblyVersion>
+    <AssemblyVersion>26.10.28.1</AssemblyVersion>
     <!-- Ikona pliku exe (Eksplorator, pasek zadan, skrot ClickOnce) -->
     <ApplicationIcon>Assets\certify.ico</ApplicationIcon>
   </PropertyGroup>
