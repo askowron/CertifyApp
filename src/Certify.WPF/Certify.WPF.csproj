@@ -51,6 +51,9 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageReleaseNotes>
+26.10.28.1
+- Nowe polecenie konsolowe: Certify.Service.exe --request HOST --site STRONA_IIS [--template DOMENA] [--webroot ŚCIEŻKA] – zamawia certyfikat z ustawień istniejącego certyfikatu (szablon: najnowszy ważny ZeroSSL w tej samej domenie), wdraża go w IIS (binding 443 z SNI) i zapisuje do automatycznego odnawiania. Bez okien, kody wyjścia i linia wyniku CERTIFYAPP-REQUEST dla automatyzacji (appit-webops-mcp); log w logs/request-RRRR-MM-DD.txt.
+
 26.10.5.1
 - Apache/Nginx: skan konfiguracji (usługi Windows, typowe katalogi, Include/include) i lista witryn do wyboru – ustawia plik konfiguracji, domeny, WebRoot i usługę.
 - IIS: wybór witryny z listy automatycznie importuje hostnames i ustawia WebRoot.
