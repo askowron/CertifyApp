@@ -1,4 +1,5 @@
 using System.Security.Cryptography.X509Certificates;
+using Certify.Core.Localization;
 using Certify.Core.Models;
 
 namespace Certify.Core.Services;
@@ -113,13 +114,25 @@ public sealed class CertificateRequestRunner
             && !string.IsNullOrWhiteSpace(existing.PfxPath) && File.Exists(existing.PfxPath))
         {
             log?.Report($"[Request] {host}: certyfikat jest już ważny, wdrażam bez nowego zamówienia.");
-            var err = await _renewal.DeployAsync(existing, log, ct);
-            CertificateHistoryLog.Add(existing, HistoryKind.Deploy, err == null, err ?? "Deployed");
-            if (err != null) existing.StatusMessage = "Deploy: " + err;
-            await _store.UpsertAsync(existing);
-            return err == null
-                ? Outcome(RequestResult.Valid, existing, "Certyfikat był już ważny, wdrożenie potwierdzone.")
-                : Outcome(RequestResult.DeployFailed, existing, "Certyfikat ważny, ale wdrożenie się nie powiodło: " + err);
+            try
+            {
+                var err = await _renewal.DeployAsync(existing, log, ct);
+                CertificateHistoryLog.Add(existing, HistoryKind.Deploy, err == null, err ?? UIStrings.T("Hist_Msg_Deployed"));
+                if (err != null) existing.StatusMessage = UIStrings.T("Deploy_Msg_Failed", err);
+                await _store.UpsertAsync(existing);
+                return err == null
+                    ? Outcome(RequestResult.Valid, host, existing, "Certyfikat był już ważny, wdrożenie potwierdzone.")
+                    : Outcome(RequestResult.DeployFailed, host, existing, "Certyfikat ważny, ale wdrożenie się nie powiodło: " + err);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                log?.Report($"[Request] Wyjątek: {ex.Message}");
+                return new RequestOutcome(RequestResult.Failed, host, null, null, ex.Message);
+            }
         }
 
         ManagedCertificate cert;
@@ -158,7 +171,7 @@ public sealed class CertificateRequestRunner
             if (!await tasks.RunPreRequestTasksAsync(cert, log, ct))
             {
                 cert.Status = CertificateStatus.Error;
-                cert.StatusMessage = "Pre-request task nie powiódł się";
+                cert.StatusMessage = UIStrings.T("Renew_Msg_PreFail");
                 CertificateHistoryLog.Add(cert, HistoryKind.Request, false, cert.StatusMessage);
                 await _store.UpsertAsync(cert);
                 log?.Report("[Request] PRZERWANO: pre-request task nie powiódł się.");
@@ -178,19 +191,19 @@ public sealed class CertificateRequestRunner
             }
 
             log?.Report("[Request] Sukces, wdrażam.");
-            CertificateHistoryLog.Add(cert, HistoryKind.Request, true, "Issued");
+            CertificateHistoryLog.Add(cert, HistoryKind.Request, true, UIStrings.T("Hist_Msg_Requested"));
             var deployError = await _renewal.DeployAsync(cert, log, ct);
             if (deployError != null)
             {
-                cert.StatusMessage = "Deploy: " + deployError;
+                cert.StatusMessage = UIStrings.T("Deploy_Msg_Failed", deployError);
                 CertificateHistoryLog.Add(cert, HistoryKind.Deploy, false, deployError);
             }
             await tasks.RunDeploymentTasksAsync(cert, certSuccess: true, log, ct);
             await _store.UpsertAsync(cert);
             log?.Report(deployError == null ? "[Request] Zakończono pomyślnie." : $"[Request] Certyfikat wystawiony, BŁĄD wdrożenia: {deployError}");
             return deployError == null
-                ? Outcome(RequestResult.Issued, cert, "Certyfikat wystawiony i wdrożony.")
-                : Outcome(RequestResult.DeployFailed, cert, "Certyfikat wystawiony i zapisany, ale wdrożenie się nie powiodło: " + deployError);
+                ? Outcome(RequestResult.Issued, host, cert, "Certyfikat wystawiony i wdrożony.")
+                : Outcome(RequestResult.DeployFailed, host, cert, "Certyfikat wystawiony i zapisany, ale wdrożenie się nie powiodło: " + deployError);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -207,8 +220,8 @@ public sealed class CertificateRequestRunner
         }
     }
 
-    private static RequestOutcome Outcome(RequestResult result, ManagedCertificate cert, string message) =>
-        new(result, cert.Name, cert.DateExpiry, Thumbprint(cert), message);
+    private static RequestOutcome Outcome(RequestResult result, string host, ManagedCertificate cert, string message) =>
+        new(result, host, cert.DateExpiry, Thumbprint(cert), message);
 
     /// <summary>Odcisk palca z PFX (haslo PfxPassword ?? "certify"); null gdy sie nie da.</summary>
     private static string? Thumbprint(ManagedCertificate cert)

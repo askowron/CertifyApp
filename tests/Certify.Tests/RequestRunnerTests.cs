@@ -225,4 +225,146 @@ public class RequestRunnerTests
         Assert.DoesNotContain("HMAC-SECRET-123", o.Message);
         Assert.DoesNotContain("KID-SECRET-456", o.Message);
     }
+
+    private sealed class ThrowingDeployer : IDeploymentTarget
+    {
+        public DeploymentTargetType TargetType => DeploymentTargetType.IIS;
+        public Task<DeploymentResult> DeployAsync(ManagedCertificate cert, DeploymentTarget config, IProgress<string>? log, CancellationToken ct) =>
+            throw new InvalidOperationException("boom");
+        public Task<List<string>> DiscoverSitesAsync() => Task.FromResult(new List<string>());
+    }
+
+    private static async Task<ManagedCertificate> ValidWithPfx(TempDir tmp, CertificateStore store, string name = "x.appit.pl")
+    {
+        var chain = new TestChain("x.appit.pl");
+        var pfx = tmp.File("x.pfx");
+        await File.WriteAllBytesAsync(pfx, chain.BuildPfx());
+        var c = Tpl("x.appit.pl", CertificateAuthority.ZeroSsl, DateTime.UtcNow);
+        c.Name = name; c.PfxPath = pfx; c.PfxPassword = "certify";
+        await store.UpsertAsync(c);
+        return c;
+    }
+
+    [Fact]
+    public async Task Request_ReusedRecordWithOtherName_ReportsRequestedHost()
+    {
+        using var tmp = new TempDir();
+        var (runner, store, _, _, _) = Build(tmp);
+        await ValidWithPfx(tmp, store, name: "My site");
+
+        var o = await Run(runner);
+
+        Assert.Equal(RequestResult.Valid, o.Result);
+        Assert.Equal("x.appit.pl", o.Host);
+    }
+
+    [Fact]
+    public async Task Request_Issued_ReportsHostAndExpiry()
+    {
+        using var tmp = new TempDir();
+        var (runner, store, _, _, _) = Build(tmp);
+        await store.UpsertAsync(Tpl("a.appit.pl", CertificateAuthority.ZeroSsl, DateTime.UtcNow));
+
+        var o = await Run(runner);
+
+        Assert.Equal("x.appit.pl", o.Host);
+        Assert.InRange(o.Expiry!.Value, DateTime.UtcNow.AddDays(89), DateTime.UtcNow.AddDays(91));
+    }
+
+    [Fact]
+    public async Task Request_DeployFails_ReportsHostAndExpiry()
+    {
+        using var tmp = new TempDir();
+        var (runner, store, _, _, _) = Build(tmp, deployOk: false);
+        await store.UpsertAsync(Tpl("a.appit.pl", CertificateAuthority.ZeroSsl, DateTime.UtcNow));
+
+        var o = await Run(runner);
+
+        Assert.Equal(RequestResult.DeployFailed, o.Result);
+        Assert.Equal("x.appit.pl", o.Host);
+        Assert.NotNull(o.Expiry);
+    }
+
+    [Fact]
+    public async Task Request_ValidStatusButMissingPfx_Reorders()
+    {
+        using var tmp = new TempDir();
+        var (runner, store, ca, _, _) = Build(tmp);
+        var existing = Tpl("x.appit.pl", CertificateAuthority.ZeroSsl, DateTime.UtcNow);
+        existing.PfxPath = tmp.File("missing.pfx");
+        await store.UpsertAsync(existing);
+
+        var o = await Run(runner);
+
+        Assert.Equal(RequestResult.Issued, o.Result);
+        Assert.Equal([existing.Id], ca.Renewed);
+    }
+
+    [Fact]
+    public async Task Request_ExistingValid_DeployFails_DeployFailedExit5()
+    {
+        using var tmp = new TempDir();
+        var (runner, store, ca, _, _) = Build(tmp, deployOk: false);
+        await ValidWithPfx(tmp, store);
+
+        var o = await Run(runner);
+
+        Assert.Equal(RequestResult.DeployFailed, o.Result);
+        Assert.Equal(5, o.ExitCode);
+        Assert.Empty(ca.Renewed);
+    }
+
+    [Fact]
+    public async Task Request_ExistingValid_DeployThrows_Failed()
+    {
+        using var tmp = new TempDir();
+        var store = new CertificateStore(tmp.Settings());
+        var ca = new FakeCa((c, _) => FakeCa.Issue(c));
+        var renewal = new RenewalService(store, ca, [new ThrowingDeployer()], tmp.Settings());
+        await ValidWithPfx(tmp, store);
+
+        var o = await Run(new CertificateRequestRunner(store, ca, renewal));
+
+        Assert.Equal(RequestResult.Failed, o.Result);
+        Assert.Contains("boom", o.Message);
+        Assert.True(renewal.OperationLock.CurrentCount == 1);
+    }
+
+    [Fact]
+    public async Task Request_PreRequestTaskFails_FailedWithoutOrder()
+    {
+        using var tmp = new TempDir();
+        var (runner, store, ca, _, _) = Build(tmp);
+        var existing = Tpl("x.appit.pl", CertificateAuthority.ZeroSsl, DateTime.UtcNow);
+        existing.Status = CertificateStatus.Error;
+        existing.Tasks = [new CertificateTaskDefinition
+        {
+            Name = "check", Stage = CertificateTaskStage.PreRequest, TaskType = CertificateTaskType.RunProgram,
+            Parameters = { [CertificateTaskParameters.P_ExecutablePath] = tmp.File("missing.exe") }
+        }];
+        await store.UpsertAsync(existing);
+
+        var o = await Run(runner);
+
+        Assert.Equal(RequestResult.Failed, o.Result);
+        Assert.Empty(ca.Renewed);
+        var saved = Assert.Single(await store.LoadAllAsync());
+        Assert.Equal(CertificateStatus.Error, saved.Status);
+        Assert.Equal(Certify.Core.Localization.UIStrings.T("Renew_Msg_PreFail"), saved.StatusMessage);
+    }
+
+    [Fact]
+    public async Task Request_Cancelled_ReleasesLock()
+    {
+        using var tmp = new TempDir();
+        using var cts = new CancellationTokenSource();
+        var (runner, store, _, _, renewal) = Build(tmp, (c, ct) => { cts.Cancel(); ct.ThrowIfCancellationRequested(); return FakeCa.Issue(c); });
+        await store.UpsertAsync(Tpl("a.appit.pl", CertificateAuthority.ZeroSsl, DateTime.UtcNow));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            runner.RunAsync("x.appit.pl", "site1", @"C:\w", null, TimeSpan.FromSeconds(5), null, cts.Token));
+
+        Assert.True(await renewal.OperationLock.WaitAsync(0, CancellationToken.None));
+        renewal.OperationLock.Release();
+    }
 }
