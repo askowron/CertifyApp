@@ -5,7 +5,12 @@ using Microsoft.Extensions.Hosting;
 // Tryb jednorazowy: zamowienie certyfikatu z szablonu. Wraca przed uruchomieniem hosta Workera.
 if (args.Length > 0 && args[0] == "--request")
 {
-    Environment.ExitCode = await RequestCli.RunAsync(args, Console.Out, Console.Error);
+    var utf8 = new System.Text.UTF8Encoding(false);
+    Console.OutputEncoding = utf8;
+    Console.SetError(new StreamWriter(Console.OpenStandardError(), utf8) { AutoFlush = true });
+    using var cts = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
+    Environment.ExitCode = await RequestCli.RunAsync(args, Console.Out, Console.Error, cts.Token);
     return;
 }
 

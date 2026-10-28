@@ -20,8 +20,8 @@ public static class RequestCli
 
     private static readonly JsonSerializerOptions Json = new()
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        // Domyslne escapowanie: linia wyniku jest czystym ASCII (przezywa dowolna strone kodowa konsoli).
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     public static (RequestArgs? Args, string? Error) Parse(string[] args)
@@ -66,47 +66,61 @@ public static class RequestCli
         return "CERTIFYAPP-REQUEST " + JsonSerializer.Serialize(payload, Json);
     }
 
-    private static int Fail(TextWriter stdout, TextWriter stderr, string result, string host, string message, int code)
+    private static int Fail(TextWriter stdout, TextWriter stderr, IProgress<string>? fileLog,
+        string result, string host, string message, int code)
     {
         stderr.WriteLine(message);
-        stdout.WriteLine(FormatLine(result, host, null, null, message));
+        var line = FormatLine(result, host, null, null, message);
+        stdout.WriteLine(line);
+        fileLog?.Report(message);
+        fileLog?.Report(line);
         return code;
     }
 
-    public static async Task<int> RunAsync(string[] args, TextWriter stdout, TextWriter stderr)
+    public static async Task<int> RunAsync(string[] args, TextWriter stdout, TextWriter stderr,
+        CancellationToken ct = default)
     {
         var (parsed, error) = Parse(args);
         if (parsed == null)
         {
             stderr.WriteLine(error);
             stderr.WriteLine(Usage);
-            var host = args.Length > 1 && !args[1].StartsWith("--") ? args[1] : "";
+            var host = args.Length > 1 && !args[1].StartsWith("--") ? args[1].Trim().ToLowerInvariant() : "";
             stdout.WriteLine(FormatLine("badargs", host, null, null, error ?? "Zle argumenty."));
             return 2;
         }
 
+        IProgress<string>? fileLog = null;
         try
         {
             if (!IsAdministrator())
-                return Fail(stdout, stderr, "notadmin", parsed.Host, "--request wymaga uprawnień administratora.", 4);
+                return Fail(stdout, stderr, null, "notadmin", parsed.Host, "--request wymaga uprawnień administratora.", 4);
 
             var settings = new SettingsStore(new AppSettings()).Load();
+            fileLog = new FileLog(settings.LogsDirectory, "request");
             var (store, ca, renewal) = RenewalHost.CreateParts(settings);
 
+            // GetSitePhysicalPath zwraca null takze przy bledzie ServerManager (brak IIS) - nie da sie tego rozroznic bez zmian w IisDeployer.
             var webroot = parsed.Webroot ?? new IisDeployer().GetSitePhysicalPath(parsed.Site);
             if (string.IsNullOrWhiteSpace(webroot))
-                return Fail(stdout, stderr, "badargs", parsed.Host, $"Strona IIS {parsed.Site} nie istnieje.", 2);
+                return Fail(stdout, stderr, fileLog, "badargs", parsed.Host, $"Strona IIS {parsed.Site} nie istnieje.", 2);
 
-            var log = new TeeProgress(stdout, new FileLog(settings.LogsDirectory, "request"));
+            var log = new TeeProgress(stdout, fileLog);
             var runner = new CertificateRequestRunner(store, ca, renewal);
             var outcome = await runner.RunAsync(parsed.Host, parsed.Site, webroot, parsed.Template,
-                TimeSpan.FromMinutes(30), log, CancellationToken.None);
-            stdout.WriteLine(ResultLine(outcome));
+                TimeSpan.FromMinutes(30), log, ct);
+            var line = ResultLine(outcome);
+            stdout.WriteLine(line);
+            fileLog.Report(line);
             return outcome.ExitCode;
+        }
+        catch (OperationCanceledException)
+        {
+            return Fail(stdout, stderr, fileLog, "failed", parsed.Host, "Przerwano.", 1);
         }
         catch (Exception ex)
         {
-            return Fail(stdout, stderr, "failed", parsed.Host, ex.Message, 1);
+            return Fail(stdout, stderr, fileLog, "failed", parsed.Host, ex.Message, 1);
         }
     }
 

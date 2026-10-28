@@ -73,4 +73,22 @@ public class RequestCliTests
         Assert.Contains("\"result\":\"badargs\"", last);
         Assert.NotEmpty(e.ToString());
     }
+
+    [Fact]
+    public void Parse_ValueStartingWithDashes_Error()
+    {
+        var (a, err) = RequestCli.Parse(new[] { "--request", "x.appit.pl", "--site", "s", "--webroot", "--site" });
+        Assert.Null(a);
+        Assert.False(string.IsNullOrEmpty(err));
+    }
+
+    [Fact]
+    public void ResultLine_PolishMessage_IsAsciiAndRoundTrips()
+    {
+        var msg = "Nie udało się: zażółć gęślą jaźń";
+        var line = RequestCli.ResultLine(new RequestOutcome(RequestResult.Failed, "x.appit.pl", null, null, msg));
+        Assert.All(line, c => Assert.True(c <= 0x7F));
+        using var doc = JsonDocument.Parse(line["CERTIFYAPP-REQUEST ".Length..]);
+        Assert.Equal(msg, doc.RootElement.GetProperty("message").GetString());
+    }
 }
