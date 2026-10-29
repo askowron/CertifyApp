@@ -68,6 +68,7 @@ public class IisDeployer : IDeploymentTarget
                     return new DeploymentResult { Success = false, Message = $"Site '{siteName}' nie znaleziony w IIS" };
 
                 var hash = x509.GetCertHash();
+                var sniHosts = new List<string>();
                 foreach (var domain in cert.Domains)
                 {
                     var (bindingInfo, useSni) = BuildHttpsBindingInfo(domain);
@@ -84,6 +85,15 @@ public class IisDeployer : IDeploymentTarget
                         if (useSni) added.SetAttributeValue("sslFlags", 1);
                         log?.Report($"[IIS] Dodano binding {bindingInfo}{(useSni ? " (SNI)" : "")}");
                     }
+                    else if (BindingHost(existingBinding.BindingInformation) is { Length: > 0 } host)
+                    {
+                        // MWA 7.0.0 zapisuje CertificateHash istniejacego bindingu do wpisu IP:port (0.0.0.0:443),
+                        // nie do host:443 - nadpisywal domyslny certyfikat, a SNI zostawal przy starym.
+                        // Binding z hostem: sslFlags=1 i wpis host:443 w http.sys przez netsh po CommitChanges.
+                        var flags = Convert.ToInt32(existingBinding.GetAttributeValue("sslFlags") ?? 0);
+                        if ((flags & 1) == 0) existingBinding.SetAttributeValue("sslFlags", flags | 1);
+                        sniHosts.Add(host);
+                    }
                     else
                     {
                         existingBinding.CertificateHash = hash;
@@ -93,6 +103,11 @@ public class IisDeployer : IDeploymentTarget
                 }
                 mgr.CommitChanges();
                 log?.Report("[IIS] CommitChanges OK");
+                foreach (var host in sniHosts)
+                {
+                    var how = HttpSysSni.Upsert(host, x509.Thumbprint, HttpSysSni.RunNetsh);
+                    log?.Report($"[IIS] Zaktualizowano binding *:443:{host} (SNI; http.sys {how} wpis {host}:443)");
+                }
             }
             catch (Exception ex) when (ex.Message.Contains("Redirection.config") || ex is UnauthorizedAccessException)
             {
@@ -110,6 +125,13 @@ public class IisDeployer : IDeploymentTarget
         {
             return new DeploymentResult { Success = false, Message = ex.Message };
         }
+    }
+
+    /// <summary>Host z bindingInformation ("ip:port:host"); pusty dla bindingu bez hosta.</summary>
+    public static string BindingHost(string bindingInformation)
+    {
+        var i = bindingInformation.LastIndexOf(':');
+        return i < 0 ? "" : bindingInformation[(i + 1)..];
     }
 
     /// <summary>

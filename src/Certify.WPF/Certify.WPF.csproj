@@ -21,7 +21,7 @@
     <!-- Ostre skalowanie na ekranach HiDPI (125/150/175%): bez tego Windows
          bitmapowo rozciaga cale okno i wszystkie fonty sa rozmazane. -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <AssemblyVersion>26.10.29.1</AssemblyVersion>
+    <AssemblyVersion>26.10.29.2</AssemblyVersion>
     <!-- Ikona pliku exe (Eksplorator, pasek zadan, skrot ClickOnce) -->
     <ApplicationIcon>Assets\certify.ico</ApplicationIcon>
   </PropertyGroup>
@@ -51,6 +51,9 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageReleaseNotes>
+26.10.29.2
+- Poprawka: odnowienie certyfikatu dla istniejącego bindingu IIS z hostem (SNI) podpinało nowy certyfikat do domyślnego wpisu 0.0.0.0:443 zamiast do host:443 – strona zostawała przy starym certyfikacie, a strony bez własnego wpisu SNI dostawały cudzy. Teraz wpis host:443 w http.sys jest aktualizowany bezpośrednio (netsh), a binding dostaje sslFlags=1.
+
 26.10.29.1
 - Poprawka: usługa CertifyAppRenewal i polecenie --request nie wdrażały certyfikatu w IIS (brak System.Security.Permissions: usługa ładuje teraz framework Microsoft.WindowsDesktop.App z .NET 8 Desktop Runtime). Dotyczyło to też automatycznych odnowień wykonywanych przez usługę.
 

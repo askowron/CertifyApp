@@ -14,6 +14,44 @@ public class IisHelperTests
     public void BuildHttpsBindingInfo(string domain, string info, bool sni) =>
         Assert.Equal((info, sni), IisDeployer.BuildHttpsBindingInfo(domain));
 
+    [Theory]
+    [InlineData("*:443:www.example.com", "www.example.com")]
+    [InlineData("*:443:", "")]
+    [InlineData("203.0.113.5:443:", "")]
+    [InlineData("[2001:db8::1]:443:api.example.com", "api.example.com")]
+    public void BindingHost(string info, string host) => Assert.Equal(host, IisDeployer.BindingHost(info));
+
+    [Fact]
+    public void HttpSysSni_Upsert_UpdatesExistingEntry()
+    {
+        var calls = new List<string>();
+        var r = HttpSysSni.Upsert("wallet.example.com", "AB12", args => { calls.Add(args); return (0, ""); });
+        Assert.Equal(
+        [
+            "http show sslcert hostnameport=wallet.example.com:443",
+            "http update sslcert hostnameport=wallet.example.com:443 certhash=AB12 appid={4dc3e181-e14b-4a21-b022-59fc669b0914} certstorename=MY"
+        ], calls);
+        Assert.Equal("zaktualizowano", r);
+    }
+
+    [Fact]
+    public void HttpSysSni_Upsert_AddsMissingEntry()
+    {
+        var calls = new List<string>();
+        var r = HttpSysSni.Upsert("er.example.com", "CD34", args => { calls.Add(args); return (args.StartsWith("http show") ? 1 : 0, ""); });
+        Assert.Equal("http add sslcert hostnameport=er.example.com:443 certhash=CD34 appid={4dc3e181-e14b-4a21-b022-59fc669b0914} certstorename=MY", calls[1]);
+        Assert.Equal("dodano", r);
+    }
+
+    [Fact]
+    public void HttpSysSni_Upsert_FailureThrowsWithOutput()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            HttpSysSni.Upsert("x.example.com", "EF", args => args.StartsWith("http show") ? (0, "") : (1, "SSL Certificate add failed, Error: 1312")));
+        Assert.Contains("x.example.com:443", ex.Message);
+        Assert.Contains("1312", ex.Message);
+    }
+
     [Fact]
     public void ExtractHosts_FromHttpAndHttpsBindings()
     {
