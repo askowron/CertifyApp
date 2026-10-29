@@ -37,6 +37,21 @@ public class IisHelperTests
     }
 }
 
+public class ServiceRuntimeTests
+{
+    // Microsoft.Web.Administration laduje System.Security.Permissions, ktory w .NET 8 jest tylko we frameworku
+    // Microsoft.WindowsDesktop.App; bez niego usluga i --request nie wdrazaja w IIS (FileNotFoundException).
+    [Fact]
+    public void ServiceRuntimeConfig_IncludesWindowsDesktopFramework()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Certify.Service.runtimeconfig.json");
+        using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(path));
+        var names = doc.RootElement.GetProperty("runtimeOptions").GetProperty("frameworks").EnumerateArray()
+            .Select(f => f.GetProperty("name").GetString());
+        Assert.Contains("Microsoft.WindowsDesktop.App", names);
+    }
+}
+
 public class FileDeployerTests
 {
     private static async Task<ManagedCertificate> IssuedAsync(TempDir tmp, string domain = "example.com")

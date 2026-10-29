@@ -21,7 +21,7 @@
     <!-- Ostre skalowanie na ekranach HiDPI (125/150/175%): bez tego Windows
          bitmapowo rozciaga cale okno i wszystkie fonty sa rozmazane. -->
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <AssemblyVersion>26.10.28.1</AssemblyVersion>
+    <AssemblyVersion>26.10.29.1</AssemblyVersion>
     <!-- Ikona pliku exe (Eksplorator, pasek zadan, skrot ClickOnce) -->
     <ApplicationIcon>Assets\certify.ico</ApplicationIcon>
   </PropertyGroup>
@@ -51,6 +51,9 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryBranch>main</RepositoryBranch>
     <PackageReleaseNotes>
+26.10.29.1
+- Poprawka: usługa CertifyAppRenewal i polecenie --request nie wdrażały certyfikatu w IIS (brak System.Security.Permissions: usługa ładuje teraz framework Microsoft.WindowsDesktop.App z .NET 8 Desktop Runtime). Dotyczyło to też automatycznych odnowień wykonywanych przez usługę.
+
 26.10.28.1
 - Nowe polecenie konsolowe: Certify.Service.exe --request HOST --site STRONA_IIS [--template DOMENA] [--webroot ŚCIEŻKA] – zamawia certyfikat z ustawień istniejącego certyfikatu (szablon: najnowszy ważny ZeroSSL w tej samej domenie), wdraża go w IIS (binding 443 z SNI) i zapisuje do automatycznego odnawiania. Bez okien, kody wyjścia i linia wyniku CERTIFYAPP-REQUEST dla automatyzacji (appit-webops-mcp); log w logs/request-RRRR-MM-DD.txt.
 
